@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - demo_network
+
+  function-a:
+    container_name: function-a
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+    networks:
+      - demo_network
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "pgrep", "python"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  function-a-listener:
+    container_name: function-a-listener
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+    networks:
+      - demo_network
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "pgrep", "python"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  producer:
+    container_name: producer
+    build:
+      context: ./log-producer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+    networks:
+      - demo_network
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  consumer:
+    container_name: consumer
+    build:
+      context: ./log-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - producer
+    networks:
+      - demo_network
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  demo_network:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
