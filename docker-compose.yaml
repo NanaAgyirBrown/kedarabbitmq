@@ -54,6 +54,8 @@ services:
     networks:
       - demo_network
     restart: on-failure
+    environment:
+      ROUTING_KEYS: "#,kern.*,*.critical,*.*,A critical kernel error,kern.critical"
     healthcheck:
       test: [ "CMD", "pgrep", "python" ]
       interval: 30s
@@ -73,6 +75,7 @@ services:
     restart: on-failure
     environment:
       SEVERITY: "info,error"
+      TYPE: "Routing"
     healthcheck:
       test: [ "CMD", "pgrep", "python" ]
       interval: 30s
@@ -92,6 +95,107 @@ services:
     restart: on-failure
     environment:
       SEVERITY: "warning"
+      TYPE: "Routing"
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  consumer-topic:
+    container_name: consumer-topic
+    build:
+      context: ./log-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - producer
+    networks:
+      - demo_network
+    restart: on-failure
+    environment:
+      TYPE: "Topics"
+      BINDING_KEYS: "#"
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  consumer-topic-kern:
+    container_name: consumer-topic-kern
+    build:
+      context: ./log-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - producer
+    networks:
+      - demo_network
+    restart: on-failure
+    environment:
+      TYPE: "Topics"
+      BINDING_KEYS: "kern.*"
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  consumer-topic-critical:
+    container_name: consumer-topic-critical
+    build:
+      context: ./log-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - producer
+    networks:
+      - demo_network
+    restart: on-failure
+    environment:
+      TYPE: "Topics"
+      BINDING_KEYS: "*.critical"
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  consumer-topic-kerncritical:
+    container_name: consumer-topic-kerncritical
+    build:
+      context: ./log-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - producer
+    networks:
+      - demo_network
+    restart: on-failure
+    environment:
+      TYPE: "Topics"
+      BINDING_KEYS: "kern.*,*.critical"
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  consumer-topic-error:
+    container_name: consumer-topic-error
+    build:
+      context: ./log-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - producer
+    networks:
+      - demo_network
+    restart: on-failure
+    environment:
+      TYPE: "Topics"
+      BINDING_KEYS: "anonymous.info"
     healthcheck:
       test: [ "CMD", "pgrep", "python" ]
       interval: 30s
