@@ -71,6 +71,27 @@ services:
     networks:
       - demo_network
     restart: on-failure
+    environment:
+      SEVERITY: "info,error"
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  consumer-warning:
+    container_name: consumer-warning
+    build:
+      context: ./log-consumer
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - producer
+    networks:
+      - demo_network
+    restart: on-failure
+    environment:
+      SEVERITY: "warning"
     healthcheck:
       test: [ "CMD", "pgrep", "python" ]
       interval: 30s

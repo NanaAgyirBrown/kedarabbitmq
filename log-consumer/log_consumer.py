@@ -1,3 +1,5 @@
+import sys
+import os
 import pika
 import logging
 
@@ -10,15 +12,26 @@ def consumer_log():
         connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq', 5672))
         channel = connection.channel()
 
-        channel.exchange_declare(exchange='logs', exchange_type='fanout')
+        # This consumes FANOUT logs
+        # channel.exchange_declare(exchange='logs', exchange_type='fanout')
+
+        # We want to consume logs based on SEVERITY - info, warning or error
+        channel.exchange_declare(exchange='direct_logs', exchange_type='direct')
+
         result = channel.queue_declare(queue='', exclusive=True)
         queue_name = result.method.queue
 
-        channel.queue_bind(exchange='logs', queue=queue_name)
-        logging.info(' [*] Waiting for logs. To exit press Ctrl+C')
+        # Get severities from environment variable
+        severities = os.getenv('SEVERITY', 'info').split(',')
+
+        for severity in severities:
+            if severity in ['info', 'warning', 'error']:
+                channel.queue_bind(exchange='direct_logs', queue=queue_name, routing_key=severity)
+
+        print(' [*] Waiting for logs. To exit press Ctrl+C')
 
         def callback(ch, method, properties, body):
-            logging.info(f' [*] Received - {body.decode()}')
+            print(f' [*] {method.routing_key}: {body.decode()}')
 
         channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
 
