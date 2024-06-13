@@ -202,6 +202,39 @@ services:
       timeout: 10s
       retries: 5
 
+  rpc-server:
+    container_name: rpc-server
+    build:
+      context: ./RPC/rpc-server
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+    networks:
+      - demo_network
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  rpc-client:
+    container_name: rpc-client
+    build:
+      context: ./RPC/client
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - rpc-server
+    networks:
+      - demo_network
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "pgrep", "python" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 networks:
   demo_network:
     driver: bridge

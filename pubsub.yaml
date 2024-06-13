@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubsub-consumer
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: pubsub-consumer
+  template:
+    metadata:
+      labels:
+        app: pubsub-consumer
+    spec:
+      containers:
+      - name: consumer
+        image: subconsciousness:latest
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/etc/gcp/keyfile.json"
+        volumeMounts:
+        - name: gcp-credentials
+          mountPath: /etc/gcp
+          readOnly: true
+      volumes:
+      - name: gcp-credentials
+        secret:
+          secretName: gcp-pubsub-secret
