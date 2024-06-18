@@ -1,27 +1,239 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pubsub-consumer
+  namespace: keda-tutorial
+  name: pubsub-deployment
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
-      app: pubsub-consumer
+      app: gke-pubsub-demo
   template:
     metadata:
       labels:
-        app: pubsub-consumer
+        app: gke-pubsub-demo
     spec:
+      imagePullSecrets:
+        - name: gcr-json-key
       containers:
-      - name: consumer
-        image: subconsciousness:latest
+      - name: pub-producer
+        image: gcr.io/gck-keda/gke-pub-producer:1.1.3
+        imagePullPolicy: Always
         env:
-        - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: "/etc/gcp/keyfile.json"
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/gcp/keyfile.json
+          - name: ROUTING_KEYS
+            value: "#,kern.*,*.critical,*.*,A critical kernel error,kern.critical"
+          - name: SEVERITY
+            value: all
+          - name: PROJECT_ID
+            value: gck-keda
+          - name: SUBSCRIPTION_LOG_NAME
+            value: direct_logs
+          - name: SUBSCRIPTION_TOPIC_NAME
+            value: topic_logs
         volumeMounts:
         - name: gcp-credentials
           mountPath: /etc/gcp
           readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+      - name: consumer
+        image: gcr.io/gck-keda/gke-sub-consumer:1.1.3
+        imagePullPolicy: Always
+        env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/gcp/keyfile.json
+          - name: PROJECT_ID
+            value: gck-keda
+          - name: SUBSCRIPTION_LOG_NAME
+            value: direct_logs
+          - name: SUBSCRIPTION_TOPIC_NAME
+            value: topic_logs
+          - name: SEVERITY
+            value: "info,error"
+          - name: TYPE
+            value: "Routing"
+        volumeMounts:
+        - name: gcp-credentials
+          mountPath: /etc/gcp
+          readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+      - name: consumer-warning
+        image: gcr.io/gck-keda/gke-sub-consumer:1.1.3
+        env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/gcp/keyfile.json
+          - name: PROJECT_ID
+            value: gck-keda
+          - name: SUBSCRIPTION_LOG_NAME
+            value: direct_logs
+          - name: SUBSCRIPTION_TOPIC_NAME
+            value: topic_logs
+          - name: SEVERITY
+            value: "warning"
+          - name: TYPE
+            value: "Routing"
+        volumeMounts:
+        - name: gcp-credentials
+          mountPath: /etc/gcp
+          readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+      - name: consumer-topic
+        image: gcr.io/gck-keda/gke-sub-consumer:1.1.3
+        env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/gcp/keyfile.json
+          - name: PROJECT_ID
+            value: gck-keda
+          - name: SUBSCRIPTION_LOG_NAME
+            value: direct_logs
+          - name: SUBSCRIPTION_TOPIC_NAME
+            value: topic_logs
+          - name: BINDING_KEYS
+            value: "#"
+          - name: TYPE
+            value: "Topics"
+        volumeMounts:
+          - name: gcp-credentials
+            mountPath: /etc/gcp
+            readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+      - name: consumer-topic-kern
+        image: gcr.io/gck-keda/gke-sub-consumer:1.1.3
+        env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/gcp/keyfile.json
+          - name: PROJECT_ID
+            value: gck-keda
+          - name: SUBSCRIPTION_LOG_NAME
+            value: direct_logs
+          - name: SUBSCRIPTION_TOPIC_NAME
+            value: topic_logs
+          - name: BINDING_KEYS
+            value: "kern.*"
+          - name: TYPE
+            value: "Topics"
+        volumeMounts:
+          - name: gcp-credentials
+            mountPath: /etc/gcp
+            readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+      - name: consumer-topic-critical
+        image: gcr.io/gck-keda/gke-sub-consumer:1.1.3
+        env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/gcp/keyfile.json
+          - name: PROJECT_ID
+            value: gck-keda
+          - name: SUBSCRIPTION_LOG_NAME
+            value: direct_logs
+          - name: SUBSCRIPTION_TOPIC_NAME
+            value: topic_logs
+          - name: BINDING_KEYS
+            value: "*.critical"
+          - name: TYPE
+            value: "Topics"
+        volumeMounts:
+          - name: gcp-credentials
+            mountPath: /etc/gcp
+            readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+      - name: consumer-topic-kerncritical
+        image: gcr.io/gck-keda/gke-sub-consumer:1.1.3
+        env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/gcp/keyfile.json
+          - name: PROJECT_ID
+            value: gck-keda
+          - name: SUBSCRIPTION_LOG_NAME
+            value: direct_logs
+          - name: SUBSCRIPTION_TOPIC_NAME
+            value: topic_logs
+          - name: BINDING_KEYS
+            value: "kern.*,*.critical"
+          - name: TYPE
+            value: "Topics"
+        volumeMounts:
+          - name: gcp-credentials
+            mountPath: /etc/gcp
+            readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+      - name: consumer-topic-error
+        image: gcr.io/gck-keda/gke-sub-consumer:1.1.3
+        env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/gcp/keyfile.json
+          - name: PROJECT_ID
+            value: gck-keda
+          - name: SUBSCRIPTION_LOG_NAME
+            value: direct_logs
+          - name: SUBSCRIPTION_TOPIC_NAME
+            value: topic_logs
+          - name: BINDING_KEYS
+            value: "anonymous.info"
+          - name: TYPE
+            value: "Topics"
+        volumeMounts:
+          - name: gcp-credentials
+            mountPath: /etc/gcp
+            readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
       volumes:
       - name: gcp-credentials
         secret:

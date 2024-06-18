@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gke-pubsub-keda.fullname" . }}
+  labels:
+    {{- include "gke-pubsub-keda.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "gke-pubsub-keda.selectorLabels" . | nindent 4 }}

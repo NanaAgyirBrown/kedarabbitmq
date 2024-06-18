@@ -1,17 +1,34 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
-  name: pubsub-scaledobject
+  name: pubsub-scaledobject-consumer
+  namespace: keda-tutorial
 spec:
   scaleTargetRef:
-    name: pubsub-consumer
-  pollingInterval: 30  # Optional. Default: 30 seconds
-  cooldownPeriod: 300  # Optional. Default: 300 seconds
-  minReplicaCount: 0   # Optional. Default: 0
-  maxReplicaCount: 100 # Optional. Default: 100
+    name: pubsub-deployment
+    kind: Deployment
+  pollingInterval: 30
+  cooldownPeriod: 300
+  minReplicaCount: 1
+  maxReplicaCount: 10
   triggers:
   - type: gcp-pubsub
     metadata:
-      subscriptionName: gck-subscription
+      subscriptionName: gck-subscription-consumer
+      projectID: gck-keda
+      credentialsFromEnv: GOOGLE_APPLICATION_CREDENTIALS
+  - type: gcp-pubsub
+    metadata:
+      subscriptionName: gck-subscription-consumer-warning
+      projectID: gck-keda
+      credentialsFromEnv: GOOGLE_APPLICATION_CREDENTIALS
+  - type: gcp-pubsub
+    metadata:
+      subscriptionName: gck-subscription-consumer-topic
+      projectID: gck-keda
+      credentialsFromEnv: GOOGLE_APPLICATION_CREDENTIALS
+  - type: gcp-pubsub
+    metadata:
+      subscriptionName: gck-subscription-consumer-topic-kern
       projectID: gck-keda
       credentialsFromEnv: GOOGLE_APPLICATION_CREDENTIALS
